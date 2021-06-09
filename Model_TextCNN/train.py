@@ -7,6 +7,8 @@ import sys
 import torch.optim as optim
 from torch import nn
 import torch
+import random
+import os
 
 if __name__=='__main__':
     config = Config()
@@ -14,8 +16,23 @@ if __name__=='__main__':
     train_file = sys.argv[2]#
     test_file = sys.argv[3]#
     dev_file = sys.argv[4]#
-
+    seed=42
     #w2v_file = '../data/glove.840B.300d.txt'
+    #为了复现
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # 为所有GPU设置随机种子
+    torch.backends.cudnn.enabled = False
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    os.environ['PYTHONHASHSEED'] = str(seed)  # 为了禁止hash随机化，使得实验可复现。
+    def seed_worker(worker_id):
+        worker_seed = torch.initial_seed() % 2 ** 32
+        np.random.seed(worker_seed)
+        random.seed(worker_seed)
+
     
     dataset = Dataset(config)
     dataset.load_data(w2v_file, train_file, test_file, dev_file)#
