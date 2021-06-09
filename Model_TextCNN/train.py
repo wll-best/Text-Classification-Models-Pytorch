@@ -43,7 +43,7 @@ if __name__=='__main__':
     if torch.cuda.is_available():
         model.cuda()
     model.train()
-    optimizer = optim.SGD(model.parameters(), lr=config.lr)
+    optimizer = optim.Adam(model.parameters(), lr=config.lr)#SGD
     NLLLoss = nn.NLLLoss()
     model.add_optimizer(optimizer)
     model.add_loss_op(NLLLoss)
