@@ -1,3 +1,5 @@
+
+
 # TextCNN Model
 This is the implementation of Convolutional Neural Network for text classification as proposed in the paper [Convolutional Neural Networks for Sentence Classification](https://arxiv.org/abs/1408.5882)
 
