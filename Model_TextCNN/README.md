@@ -14,8 +14,8 @@ CNN has a lot of success applications in the field of Computer Vision. CNNs have
 - Used word2vec Embeddings for encoding words
 - Used 4 different filter windows of sizes 2,3,4,5
 - Used 300 feature maps for above windows sizes
-- Adam activaion function
+-  activaion function
 - Max-pooling
 - Dropout with keep probability 0.7
-- Optimizer - Stochastic Gradient Descent
+- Optimizer - Adam
 - Loss function - CrossEntropyLoss
