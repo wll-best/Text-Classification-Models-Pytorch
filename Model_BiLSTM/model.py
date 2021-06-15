@@ -86,7 +86,7 @@ class BiLSTM(nn.Module):
                 losses = []
                 
                 # Evalute Accuracy on validation set
-                val_accuracy = evaluate_model(self, val_iterator)
+                val_accuracy,_ = evaluate_model(self, val_iterator)
                 print("\tVal Accuracy: {:.4f}".format(val_accuracy))
                 self.train()
                 
