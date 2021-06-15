@@ -44,9 +44,11 @@ if __name__=='__main__':
         model.cuda()
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=config.lr)#SGD
-    NLLLoss = nn.NLLLoss()
+    #NLLLoss = nn.NLLLoss()
+    CELoss = nn.CrossEntropyLoss()
     model.add_optimizer(optimizer)
-    model.add_loss_op(NLLLoss)
+    #model.add_loss_op(NLLLoss)
+    model.add_loss_op(CELoss)
     ##############################################################
     
     train_losses = []
