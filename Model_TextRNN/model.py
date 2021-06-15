@@ -5,9 +5,9 @@ from torch import nn
 import numpy as np
 from utils import *
 
-class TextRNN(nn.Module):
+class BiLSTM(nn.Module):
     def __init__(self, config, vocab_size, word_embeddings):
-        super(TextRNN, self).__init__()
+        super(BiLSTM, self).__init__()
         self.config = config
         
         # Embedding Layer

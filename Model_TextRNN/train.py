@@ -39,7 +39,7 @@ if __name__=='__main__':
     
     # Create Model with specified optimizer and loss function
     ##############################################################
-    model = TextRNN(config, len(dataset.vocab), dataset.word_embeddings)
+    model = BiLSTM(config, len(dataset.vocab), dataset.word_embeddings)
     if torch.cuda.is_available():
         model.cuda()
     model.train()
