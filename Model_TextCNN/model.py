@@ -94,7 +94,7 @@ class TextCNN(nn.Module):
             losses.append(loss.data.cpu().numpy())
             self.optimizer.step()
     
-            if i % 100 == 0:
+            if i % 50 == 0:#原来100
                 print("Iter: {}".format(i+1))
                 avg_train_loss = np.mean(losses)
                 train_losses.append(avg_train_loss)

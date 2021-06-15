@@ -123,4 +123,18 @@ def evaluate_model(model, iterator):
     macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
     return score,macro_f1
 
-
+def evaluate_model_te(model, iterator):
+    all_preds = []
+    all_y = []
+    for idx,batch in enumerate(iterator):
+        if torch.cuda.is_available():
+            x = batch.text.cuda()
+        else:
+            x = batch.text
+        y_pred = model(x)
+        predicted = torch.max(y_pred.cpu().data, 1)[1] + 1
+        all_preds.extend(predicted.numpy())
+        all_y.extend(batch.label.numpy())
+    score = accuracy_score(all_y, np.array(all_preds).flatten())
+    macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
+    return score,macro_f1

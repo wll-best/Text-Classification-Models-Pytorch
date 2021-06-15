@@ -62,7 +62,7 @@ if __name__=='__main__':
 
     train_acc,_ = evaluate_model(model, dataset.train_iterator)
     val_acc,_ = evaluate_model(model, dataset.val_iterator)
-    test_acc,macro_f1 = evaluate_model(model, dataset.test_iterator)
+    test_acc,macro_f1 = evaluate_model_te(model, dataset.test_iterator)
 
     print ('Final Training Accuracy: {:.4f}'.format(train_acc))
     print ('Final Validation Accuracy: {:.4f}'.format(val_acc))

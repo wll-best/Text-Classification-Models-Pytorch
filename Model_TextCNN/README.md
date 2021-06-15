@@ -11,11 +11,11 @@ CNN has a lot of success applications in the field of Computer Vision. CNNs have
 ## Implementation Details
 - Since sentence lengths vary for different sentences, zero pad/truncate each sentence to have length n
 - Represent every sentence/text by a 2D tensor of shape (n,d), where d is dimensionality of word vectors
-- Used pre-trained Glove Embeddings for encoding words
-- Used 3 different filter windows of sizes 3,4,5
-- Used 100 feature maps for above windows sizes
-- ReLU activaion function
+- Used word2vec Embeddings for encoding words
+- Used 4 different filter windows of sizes 2,3,4,5
+- Used 300 feature maps for above windows sizes
+- Adam activaion function
 - Max-pooling
-- Dropout with keep probability 0.6
+- Dropout with keep probability 0.7
 - Optimizer - Stochastic Gradient Descent
-- Loss function - Negative Log Likelihood
+- Loss function - CrossEntropyLoss
