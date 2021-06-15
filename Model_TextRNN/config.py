@@ -9,5 +9,5 @@ class Config(object):
     max_epochs = 30
     lr = 0.001
     batch_size = 64
-    max_sen_len = 128 # Sequence length for RNN
+    max_sen_len = 128 # Sequence length for BiLSTM
     dropout_keep = 0.3
