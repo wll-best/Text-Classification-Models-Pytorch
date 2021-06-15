@@ -6,7 +6,8 @@ from torchtext.vocab import Vectors
 import spacy
 import pandas as pd
 import numpy as np
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score,f1_score
+import csv
 
 class Dataset(object):
     def __init__(self, config):
@@ -17,27 +18,32 @@ class Dataset(object):
         self.vocab = []
         self.word_embeddings = {}
     
-    def parse_label(self, label):
-        '''
-        Get the actual labels from label string
-        Input:
-            label (string) : labels of the form '__label__2'
-        Returns:
-            label (int) : integer value corresponding to label string
-        '''
-        return int(label.strip()[-1])
+    # def parse_label(self, label):
+    #     '''
+    #     Get the actual labels from label string
+    #     Input:
+    #         label (string) : labels of the form '__label__2'
+    #     Returns:
+    #         label (int) : integer value corresponding to label string
+    #     '''
+    #     return int(label.strip()[-1])
 
     def get_pandas_df(self, filename):
         '''
         Load the data into Pandas.DataFrame object
         This will be used to convert data to torchtext object
         '''
-        with open(filename, 'r') as datafile:     
-            data = [line.strip().split(',', maxsplit=1) for line in datafile]
-            data_text = list(map(lambda x: x[1], data))
-            data_label = list(map(lambda x: self.parse_label(x[0]), data))
-
-        full_df = pd.DataFrame({"text":data_text, "label":data_label})
+        text_li=[]
+        label_li=[]
+        with open(filename, 'r', encoding='utf-8') as fi:
+            next(fi)
+            rowes = csv.reader(fi, delimiter='\t')
+            for row in rowes:
+                text = row[0]
+                text_li.append(text)
+                label = row[1]
+                label_li.append(label)
+        full_df = pd.DataFrame({"text": text_li, "label": label_li})
         return full_df
     
     def load_data(self, w2v_file, train_file, test_file, val_file=None):
@@ -114,4 +120,21 @@ def evaluate_model(model, iterator):
         all_preds.extend(predicted.numpy())
         all_y.extend(batch.label.numpy())
     score = accuracy_score(all_y, np.array(all_preds).flatten())
-    return score
+    macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
+    return score,macro_f1
+
+def evaluate_model_te(model, iterator):#有时间得到logits,
+    all_preds = []
+    all_y = []
+    for idx,batch in enumerate(iterator):
+        if torch.cuda.is_available():
+            x = batch.text.cuda()
+        else:
+            x = batch.text
+        y_pred = model(x)
+        predicted = torch.max(y_pred.cpu().data, 1)[1] + 1
+        all_preds.extend(predicted.numpy())
+        all_y.extend(batch.label.numpy())
+    score = accuracy_score(all_y, np.array(all_preds).flatten())
+    macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
+    return score,macro_f1

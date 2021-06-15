@@ -123,7 +123,7 @@ def evaluate_model(model, iterator):
     macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
     return score,macro_f1
 
-def evaluate_model_te(model, iterator):
+def evaluate_model_te(model, iterator):#有时间得到logits,
     all_preds = []
     all_y = []
     for idx,batch in enumerate(iterator):
