@@ -3,7 +3,7 @@
 class Config(object):
     embed_size = 200
     hidden_layers = 2
-    hidden_size = 300
+    hidden_size = 200
     bidirectional = True
     output_size = 5
     max_epochs = 30

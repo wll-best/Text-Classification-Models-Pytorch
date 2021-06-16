@@ -13,7 +13,9 @@ class BiLSTM(nn.Module):
         # Embedding Layer
         self.embeddings = nn.Embedding(vocab_size, self.config.embed_size)
         self.embeddings.weight = nn.Parameter(word_embeddings, requires_grad=False)
-        
+
+        #加词性向量
+
         self.lstm = nn.LSTM(input_size = self.config.embed_size,
                             hidden_size = self.config.hidden_size,
                             num_layers = self.config.hidden_layers,
@@ -35,6 +37,11 @@ class BiLSTM(nn.Module):
         # x.shape = (max_sen_len, batch_size)
         embedded_sent = self.embeddings(x)
         # embedded_sent.shape = (max_sen_len=20, batch_size=64,embed_size=300)
+
+        # 加词性向量
+
+        #拼接--词向量与词性向量--torch.cat((a,a),1)
+
 
         lstm_out, (h_n,c_n) = self.lstm(embedded_sent)
         final_feature_map = self.dropout(h_n) # shape=(num_layers * num_directions, 64, hidden_size)
