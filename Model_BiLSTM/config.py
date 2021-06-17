@@ -1,7 +1,8 @@
 # config.py
 
 class Config(object):
-    embed_size = 200
+    embed_size = 200#w2v维度
+    pos_embed_size =30#pos维度
     hidden_layers = 2
     hidden_size = 200
     bidirectional = True

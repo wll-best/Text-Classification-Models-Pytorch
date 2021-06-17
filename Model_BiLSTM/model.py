@@ -6,17 +6,20 @@ import numpy as np
 from utils import *
 
 class BiLSTM(nn.Module):
-    def __init__(self, config, vocab_size, word_embeddings):
+    def __init__(self, config, vocab_size, word_embeddings, pos_vocab_size):#, pos_embeddings
         super(BiLSTM, self).__init__()
         self.config = config
         
-        # Embedding Layer
+        # Embedding Layer来解决 embedding lookup 问题
         self.embeddings = nn.Embedding(vocab_size, self.config.embed_size)
         self.embeddings.weight = nn.Parameter(word_embeddings, requires_grad=False)
 
         #加词性向量
+        self.posembeddings = nn.Embedding(pos_vocab_size, self.config.pos_embed_size)
+        #self.posembeddings.weight = nn.Parameter(pos_embeddings, requires_grad=False)
 
-        self.lstm = nn.LSTM(input_size = self.config.embed_size,
+        #第一项后加pos
+        self.lstm = nn.LSTM(input_size = self.config.embed_size+self.config.pos_embed_size,
                             hidden_size = self.config.hidden_size,
                             num_layers = self.config.hidden_layers,
                             dropout = self.config.dropout_keep,
@@ -33,17 +36,18 @@ class BiLSTM(nn.Module):
         # Softmax non-linearity
         self.softmax = nn.Softmax()
         
-    def forward(self, x):
+    def forward(self, x, pos):#新增传参pos
         # x.shape = (max_sen_len, batch_size)
         embedded_sent = self.embeddings(x)
         # embedded_sent.shape = (max_sen_len=20, batch_size=64,embed_size=300)
 
         # 加词性向量
-
+        embedded_pos=self.posembeddings(pos)
         #拼接--词向量与词性向量--torch.cat((a,a),1)
+        embedded_all=torch.cat((embedded_sent,embedded_pos),2)
 
-
-        lstm_out, (h_n,c_n) = self.lstm(embedded_sent)
+        #lstm_out, (h_n,c_n) = self.lstm(embedded_sent)
+        lstm_out, (h_n, c_n) = self.lstm(embedded_all)#维度有变
         final_feature_map = self.dropout(h_n) # shape=(num_layers * num_directions, 64, hidden_size)
         
         # Convert input to (64, hidden_size * hidden_layers * num_directions) for linear layer
@@ -76,10 +80,12 @@ class BiLSTM(nn.Module):
             if torch.cuda.is_available():
                 x = batch.text.cuda()
                 y = (batch.label - 1).type(torch.cuda.LongTensor)
+                pos=batch.pos.cuda()#新增pos
             else:
                 x = batch.text
                 y = (batch.label - 1).type(torch.LongTensor)
-            y_pred = self.__call__(x)
+                pos = batch.pos#新增pos
+            y_pred = self.__call__(x,pos)#新增pos
             loss = self.loss_op(y_pred, y)
             loss.backward()
             losses.append(loss.data.cpu().numpy())

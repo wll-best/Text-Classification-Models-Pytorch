@@ -17,6 +17,7 @@ class Dataset(object):
         self.val_iterator = None
         self.vocab = []
         self.word_embeddings = {}
+        self.pos_vocab=[]
     
     # def parse_label(self, label):
     #     '''
@@ -45,7 +46,14 @@ class Dataset(object):
                 label_li.append(label)
         full_df = pd.DataFrame({"text": text_li, "label": label_li})
         return full_df
-    
+
+    # 新增函数
+    # df.values.tolist()形如[[text1, label1], [text2, label2], ..., [textn, labeln]]
+    # 向train_df.values.tolist()增加了一个特征，也就是复制了一遍text。
+    # 返回值read_data形如[[text1, text1, label1], [text2, text2, label2], ..., [textn, textn, labeln]]
+    def df_process(df):
+        return [[[text, text, label] for text, label in example] for example in df.values.tolist()]
+
     def load_data(self, w2v_file, train_file, test_file, val_file=None):
         '''
         Loads the data from files
@@ -61,25 +69,33 @@ class Dataset(object):
 
         NLP = spacy.load('en')
         tokenizer = lambda sent: [x.text for x in NLP.tokenizer(sent) if x.text != " "]
-        
+        pos_generator = lambda sent: [x.pos_ for x in NLP(sent) if x.text != " "]# 新增函数，获取词性特征
+
         # Creating Field for data
         TEXT = data.Field(sequential=True, tokenize=tokenizer, lower=True, fix_length=self.config.max_sen_len)
+        # 新增POS Field，这里用pos_generator代替了tokenizer函数对原文进行处理，从而得到词性特征。
+        POS = data.Field(sequential=True, tokenize=pos_generator, lower=True,
+                         fix_length=self.config.max_sen_len)
         LABEL = data.Field(sequential=False, use_vocab=False)
-        datafields = [("text",TEXT),("label",LABEL)]
+        datafields = [("text",TEXT),("pos",POS),("label",LABEL)]#新增POS Field
         
         # Load data from pd.DataFrame into torchtext.data.Dataset
         train_df = self.get_pandas_df(train_file)
-        train_examples = [data.Example.fromlist(i, datafields) for i in train_df.values.tolist()]
+        train_read_data = self.df_process(train_df)  # 给数据增加一个特征，也就是复制了一遍text，它在经过pos_generator处理后变成词性特征
+        #train_examples = [data.Example.fromlist(i, datafields) for i in train_df.values.tolist()]
+        train_examples = [data.Example.fromlist(i, datafields) for i in train_read_data]
         train_data = data.Dataset(train_examples, datafields)
         
         test_df = self.get_pandas_df(test_file)
-        test_examples = [data.Example.fromlist(i, datafields) for i in test_df.values.tolist()]
+        test_read_data = self.df_process(test_df)
+        test_examples = [data.Example.fromlist(i, datafields) for i in test_read_data]
         test_data = data.Dataset(test_examples, datafields)
         
         # If validation file exists, load it. Otherwise get validation data from training data
         if val_file:
             val_df = self.get_pandas_df(val_file)
-            val_examples = [data.Example.fromlist(i, datafields) for i in val_df.values.tolist()]
+            val_read_data = self.df_process(val_df)
+            val_examples = [data.Example.fromlist(i, datafields) for i in val_read_data]
             val_data = data.Dataset(val_examples, datafields)
         else:
             train_data, val_data = train_data.split(split_ratio=0.8)
@@ -87,6 +103,12 @@ class Dataset(object):
         TEXT.build_vocab(train_data, vectors=Vectors(w2v_file))
         self.word_embeddings = TEXT.vocab.vectors
         self.vocab = TEXT.vocab
+
+        POS.build_vocab(train_data)                                     #不用vectors初始化
+        self.pos_vocab = POS.vocab                                     #在__init__里也要加上self.POS_vocab
+        print('打印------')
+        print(self.pos_vocab.itos)#统计pos维度
+        #self.pos_embeddings=
         
         self.train_iterator = data.BucketIterator(
             (train_data),
