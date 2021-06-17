@@ -54,7 +54,7 @@ class TextCNN(nn.Module):
         conv_out1 = self.conv1(embedded_sent).squeeze(2) #shape=(64, num_channels, 1) (squeeze 1)
         conv_out2 = self.conv2(embedded_sent).squeeze(2)
         conv_out3 = self.conv3(embedded_sent).squeeze(2)
-        conv_out4 = self.conv3(embedded_sent).squeeze(2)
+        conv_out4 = self.conv4(embedded_sent).squeeze(2)
         all_out = torch.cat((conv_out1, conv_out2, conv_out3, conv_out4), 1)
         final_feature_map = self.dropout(all_out)
         final_out = self.fc(final_feature_map)
