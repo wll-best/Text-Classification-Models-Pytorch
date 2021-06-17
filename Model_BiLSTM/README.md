@@ -9,7 +9,7 @@ The architecture of Bi-directional LSTM is as follows:
 ![BiLSTM Architecture](images/BiLSTM.JPG)
 
 ## Implementation Details
-- Used pre-trained Glove Embeddings for initializing word vectors
+- word2vec Embeddings for initializing word vectors
 - 2 Layers of BiLSTM
 - Used  hidden units within each BiLSTM layer
 - Dropout with keep probability 0.3
