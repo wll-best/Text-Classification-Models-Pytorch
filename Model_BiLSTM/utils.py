@@ -51,8 +51,10 @@ class Dataset(object):
     # df.values.tolist()形如[[text1, label1], [text2, label2], ..., [textn, labeln]]
     # 向train_df.values.tolist()增加了一个特征，也就是复制了一遍text。
     # 返回值read_data形如[[text1, text1, label1], [text2, text2, label2], ..., [textn, textn, labeln]]
-    def df_process(df):
-        return [[[text, text, label] for text, label in example] for example in df.values.tolist()]
+    def df_process(self,df):
+        df_va=df.values.tolist()
+        return [[x[0],x[0],x[1]] for x in df_va]
+        #return [[[text, text, label] for text, label in example] for example in df.values.tolist()]
 
     def load_data(self, w2v_file, train_file, test_file, val_file=None):
         '''
@@ -106,8 +108,10 @@ class Dataset(object):
 
         POS.build_vocab(train_data)                                     #不用vectors初始化
         self.pos_vocab = POS.vocab                                     #在__init__里也要加上self.POS_vocab
-        print('打印------')
-        print(self.pos_vocab.itos)#统计pos维度
+
+        #print(self.pos_vocab.itos)#统计pos维度---20
+        # ['<unk>', '<pad>', 'noun', 'punct', 'det', 'adj', 'verb', 'aux', 'adp', 'adv', 'pron', 'cconj', 'propn', 'part', 'sconj', 'num', 'sym', 'intj', 'x', 'space']
+
         #self.pos_embeddings=
         
         self.train_iterator = data.BucketIterator(
@@ -135,9 +139,11 @@ def evaluate_model(model, iterator):
     for idx,batch in enumerate(iterator):
         if torch.cuda.is_available():
             x = batch.text.cuda()
+            pos = batch.pos.cuda()
         else:
             x = batch.text
-        y_pred = model(x)
+            pos = batch.pos
+        y_pred = model(x,pos)
         predicted = torch.max(y_pred.cpu().data, 1)[1] + 1
         all_preds.extend(predicted.numpy())
         all_y.extend(batch.label.numpy())
@@ -146,17 +152,4 @@ def evaluate_model(model, iterator):
     return score,macro_f1
 
 def evaluate_model_te(model, iterator):#有时间得到logits,
-    all_preds = []
-    all_y = []
-    for idx,batch in enumerate(iterator):
-        if torch.cuda.is_available():
-            x = batch.text.cuda()
-        else:
-            x = batch.text
-        y_pred = model(x)
-        predicted = torch.max(y_pred.cpu().data, 1)[1] + 1
-        all_preds.extend(predicted.numpy())
-        all_y.extend(batch.label.numpy())
-    score = accuracy_score(all_y, np.array(all_preds).flatten())
-    macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
-    return score,macro_f1
+    pass
