@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score,f1_score
 import csv
+from torch import nn
 
 class Dataset(object):
     def __init__(self, config):
@@ -129,6 +130,7 @@ def evaluate_model(model, iterator):
     return score,macro_f1
 
 def evaluate_model_te(model, iterator):#有时间得到logits(roc曲线), tensoboard图
+
     all_preds = []
     all_y = []
     all_logits=[]
@@ -138,10 +140,11 @@ def evaluate_model_te(model, iterator):#有时间得到logits(roc曲线), tensob
         else:
             x = batch.text
         y_pred = model(x)
-        predicted = torch.max(y_pred.cpu().data, 1)[1] + 1
+        predicted = torch.max(y_pred.cpu().data, 1)[1] + 1#[0]是最大值，[1]是最大值的索引
         all_preds.extend(predicted.numpy())
         all_y.extend(batch.label.numpy())
-        all_logits=np.append(all_logits,y_pred.cpu().data)#每种分类的可能性数组
+        norm=nn.Softmax(dim=1)
+        all_logits=np.append(all_logits,norm(y_pred.cpu().data))#每种分类的可能性数组[yp.cpu()] y_pred.cpu().data
     np.savetxt('../data/sem/all_logits_cnn.txt', all_logits.reshape(-1, 5))
 
     accuracy = accuracy_score(all_y, np.array(all_preds).flatten())

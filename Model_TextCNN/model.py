@@ -58,7 +58,8 @@ class TextCNN(nn.Module):
         all_out = torch.cat((conv_out1, conv_out2, conv_out3, conv_out4), 1)
         final_feature_map = self.dropout(all_out)
         final_out = self.fc(final_feature_map)
-        return self.softmax(final_out)
+        #return self.softmax(final_out)
+        return final_out
     
     def add_optimizer(self, optimizer):
         self.optimizer = optimizer
