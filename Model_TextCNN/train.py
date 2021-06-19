@@ -81,7 +81,7 @@ if __name__=='__main__':
     df['text'] = text_li
     df['predict_label'] = all_preds
     df['label'] = all_labels
-    df.to_csv('../data/sem/ntest_sg_label.tsv', sep='\t')
+    df.to_csv('../data/sem/ntest_cnn_label.tsv', sep='\t')
 
     print ('Final Training Accuracy: {:.4f}'.format(train_acc))
     print ('Final Validation Accuracy: {:.4f}'.format(val_acc))

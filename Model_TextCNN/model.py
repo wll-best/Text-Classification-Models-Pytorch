@@ -49,9 +49,9 @@ class TextCNN(nn.Module):
     def forward(self, x):
         # x.shape = (max_sen_len, batch_size)
         embedded_sent = self.embeddings(x).permute(1,2,0)
-        # embedded_sent.shape = (batch_size=64,embed_size=300,max_sen_len=20)
-        
-        conv_out1 = self.conv1(embedded_sent).squeeze(2) #shape=(64, num_channels, 1) (squeeze 1)
+        # embedded_sent.shape = (batch_size=32,embed_size=200,max_sen_len=128)
+
+        conv_out1 = self.conv1(embedded_sent).squeeze(2) #shape=(32, num_channels, 1) (squeeze 1)
         conv_out2 = self.conv2(embedded_sent).squeeze(2)
         conv_out3 = self.conv3(embedded_sent).squeeze(2)
         conv_out4 = self.conv4(embedded_sent).squeeze(2)
@@ -84,10 +84,11 @@ class TextCNN(nn.Module):
             self.optimizer.zero_grad()
             if torch.cuda.is_available():
                 x = batch.text.cuda()
-                y = (batch.label-1).type(torch.cuda.LongTensor)#batch.label
+                y = (batch.label-1).type(torch.cuda.LongTensor)#batch.label-1
             else:
                 x = batch.text
-                y = (batch.label-1).type(torch.LongTensor)#batch.label
+                y = (batch.label-1).type(torch.LongTensor)#batch.label-1
+
             y_pred = self.__call__(x)
             loss = self.loss_op(y_pred, y)
             loss.backward()
