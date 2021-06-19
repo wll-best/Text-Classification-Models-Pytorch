@@ -33,10 +33,9 @@ if __name__=='__main__':
         np.random.seed(worker_seed)
         random.seed(worker_seed)
 
-    
     dataset = Dataset(config)
     dataset.load_data(w2v_file, train_file, test_file, dev_file)#
-    
+
     # Create Model with specified optimizer and loss function
     ##############################################################
     model = TextCNN(config, len(dataset.vocab), dataset.word_embeddings)
@@ -60,11 +59,33 @@ if __name__=='__main__':
         train_losses.append(train_loss)
         val_accuracies.append(val_accuracy)
 
+    #print('train_evaluate_model---')4974
     train_acc,_ = evaluate_model(model, dataset.train_iterator)
+    #print('val_evaluate_model---')1658
     val_acc,_ = evaluate_model(model, dataset.val_iterator)
-    test_acc,macro_f1 = evaluate_model_te(model, dataset.test_iterator)
+    #print('test_evaluate_model---')1658
+    test_acc, macro_f1, all_preds, all_labels, micro_f1,weighted_f1 = evaluate_model_te(model, dataset.test_iterator)
+
+
+    #获取测试集的文本
+    text_li = []
+    with open(test_file, 'r', encoding='utf-8') as fi:
+        next(fi)
+        rowes = csv.reader(fi, delimiter='\t')
+        for row in rowes:
+            text = row[0]
+            text_li.append(text)
+
+    # dataframe保存带标签的预测文件ntest_label.tsv,格式：id,text,label,predict_label
+    df = pd.DataFrame(columns=['text', 'label', 'predict_label'])
+    df['text'] = text_li
+    df['predict_label'] = all_preds
+    df['label'] = all_labels
+    df.to_csv('../data/sem/ntest_sg_label.tsv', sep='\t')
 
     print ('Final Training Accuracy: {:.4f}'.format(train_acc))
     print ('Final Validation Accuracy: {:.4f}'.format(val_acc))
     print ('Final Test Accuracy: {:.4f}'.format(test_acc))
     print('Final Test macro-f1: {:.4f}'.format(macro_f1))
+    print('Final Test micro-f1: {:.4f}'.format(micro_f1))
+    print('Final Test wei-f1: {:.4f}'.format(weighted_f1))

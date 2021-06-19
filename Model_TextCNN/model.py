@@ -84,10 +84,10 @@ class TextCNN(nn.Module):
             self.optimizer.zero_grad()
             if torch.cuda.is_available():
                 x = batch.text.cuda()
-                y = (batch.label - 1).type(torch.cuda.LongTensor)
+                y = (batch.label-1).type(torch.cuda.LongTensor)#batch.label
             else:
                 x = batch.text
-                y = (batch.label - 1).type(torch.LongTensor)
+                y = (batch.label-1).type(torch.LongTensor)#batch.label
             y_pred = self.__call__(x)
             loss = self.loss_op(y_pred, y)
             loss.backward()

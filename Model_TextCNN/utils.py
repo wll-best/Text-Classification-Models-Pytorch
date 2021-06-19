@@ -42,7 +42,9 @@ class Dataset(object):
                 text = row[0]
                 text_li.append(text)
                 label = row[1]
+                #label_li.append(str(int(label)-1))
                 label_li.append(label)
+                #print(label_li)
         full_df = pd.DataFrame({"text": text_li, "label": label_li})
         return full_df
     
@@ -83,14 +85,16 @@ class Dataset(object):
             val_data = data.Dataset(val_examples, datafields)
         else:
             train_data, val_data = train_data.split(split_ratio=0.8)
-        
-        TEXT.build_vocab(train_data, vectors=Vectors(w2v_file))
+
+        #TEXT.build_vocab(train_data, vectors=Vectors(w2v_file))
+        TEXT.build_vocab(train_data, val_data, test_data, vectors=Vectors(w2v_file))#
+
         self.word_embeddings = TEXT.vocab.vectors
         self.vocab = TEXT.vocab
-        
+
         self.train_iterator = data.BucketIterator(
             (train_data),
-            batch_size=self.config.batch_size,
+            batch_size=self.config.batch_size,# 每个batch内的数据按照sork_key降序排列，为pack_padded_sequence做准备
             sort_key=lambda x: len(x.text),
             repeat=False,
             shuffle=True)
@@ -98,10 +102,10 @@ class Dataset(object):
         self.val_iterator, self.test_iterator = data.BucketIterator.splits(
             (val_data, test_data),
             batch_size=self.config.batch_size,
-            sort_key=lambda x: len(x.text),
+            sort=False,#这里为了打印label.tsv不改变原始顺序
             repeat=False,
             shuffle=False)
-        
+        #                        #sort_key=lambda x: len(x.text),
         print ("Loaded {} training examples".format(len(train_data)))
         print ("Loaded {} test examples".format(len(test_data)))
         print ("Loaded {} validation examples".format(len(val_data)))
@@ -119,13 +123,15 @@ def evaluate_model(model, iterator):
         predicted = torch.max(y_pred.cpu().data, 1)[1] + 1
         all_preds.extend(predicted.numpy())
         all_y.extend(batch.label.numpy())
+    #print('预测样本数：'+str(len(all_y)))
     score = accuracy_score(all_y, np.array(all_preds).flatten())
     macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
     return score,macro_f1
 
-def evaluate_model_te(model, iterator):#有时间得到logits,
+def evaluate_model_te(model, iterator):#有时间得到logits(roc曲线), tensoboard图
     all_preds = []
     all_y = []
+    all_logits=[]
     for idx,batch in enumerate(iterator):
         if torch.cuda.is_available():
             x = batch.text.cuda()
@@ -135,6 +141,12 @@ def evaluate_model_te(model, iterator):#有时间得到logits,
         predicted = torch.max(y_pred.cpu().data, 1)[1] + 1
         all_preds.extend(predicted.numpy())
         all_y.extend(batch.label.numpy())
-    score = accuracy_score(all_y, np.array(all_preds).flatten())
-    macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
-    return score,macro_f1
+        all_logits=np.append(all_logits,y_pred.cpu().data)#每种分类的可能性数组
+    np.savetxt('../data/sem/all_logits_cnn.txt', all_logits.reshape(-1, 5))
+
+    accuracy = accuracy_score(all_y, np.array(all_preds).flatten())
+    micro_f1 = f1_score(all_y, np.array(all_preds).flatten(), average='micro')
+    weighted_f1=f1_score(all_y, np.array(all_preds).flatten(), average='weighted')
+    macro_f1 = f1_score(all_y, np.array(all_preds).flatten(), average='macro')
+    return accuracy, macro_f1, np.array(all_preds).flatten(), all_y,micro_f1,weighted_f1
+

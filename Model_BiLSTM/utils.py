@@ -102,7 +102,9 @@ class Dataset(object):
         else:
             train_data, val_data = train_data.split(split_ratio=0.8)
         
-        TEXT.build_vocab(train_data, vectors=Vectors(w2v_file))
+        #TEXT.build_vocab(train_data, vectors=Vectors(w2v_file))
+        TEXT.build_vocab(train_data, val_data, test_data, vectors=Vectors(w2v_file))#
+
         self.word_embeddings = TEXT.vocab.vectors
         self.vocab = TEXT.vocab
 
