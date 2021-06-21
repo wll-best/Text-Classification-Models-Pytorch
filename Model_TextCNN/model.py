@@ -4,6 +4,8 @@ import torch
 from torch import nn
 import numpy as np
 from utils import *
+from tensorboardX import SummaryWriter
+import time
 
 class TextCNN(nn.Module):
     def __init__(self, config, vocab_size, word_embeddings):
@@ -71,16 +73,19 @@ class TextCNN(nn.Module):
         print("Reducing LR")
         for g in self.optimizer.param_groups:
             g['lr'] = g['lr'] / 2
-                
+
+
+
     def run_epoch(self, train_iterator, val_iterator, epoch):
+
         train_losses = []
         val_accuracies = []
         losses = []
-        
+
         # Reduce learning rate as number of epochs increase
         if (epoch == int(self.config.max_epochs/3)) or (epoch == int(2*self.config.max_epochs/3)):
             self.reduce_lr()
-            
+
         for i, batch in enumerate(train_iterator):
             self.optimizer.zero_grad()
             if torch.cuda.is_available():
@@ -96,7 +101,8 @@ class TextCNN(nn.Module):
             losses.append(loss.data.cpu().numpy())
             self.optimizer.step()
     
-            if i % 50 == 0:#原来100
+            if i % 50 == 0:#原来100---每迭代50
+                #step+=1#每轮的step数量
                 print("Iter: {}".format(i+1))
                 avg_train_loss = np.mean(losses)
                 train_losses.append(avg_train_loss)
@@ -104,8 +110,9 @@ class TextCNN(nn.Module):
                 losses = []
                 
                 # Evalute Accuracy on validation set
-                val_accuracy,_ = evaluate_model(self, val_iterator)
+                _,val_accuracy,_ = evaluate_model(self, val_iterator)
+                val_accuracies.append(val_accuracy)
                 print("\tVal Accuracy: {:.4f}".format(val_accuracy))
                 self.train()
                 
-        return train_losses, val_accuracies
+        return train_losses, val_accuracies #, step

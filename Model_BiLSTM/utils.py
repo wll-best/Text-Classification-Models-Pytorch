@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score,f1_score
 import csv
+from torch import nn
 
 class Dataset(object):
     def __init__(self, config):
@@ -126,18 +127,23 @@ class Dataset(object):
         self.val_iterator, self.test_iterator = data.BucketIterator.splits(
             (val_data, test_data),
             batch_size=self.config.batch_size,
-            sort_key=lambda x: len(x.text),
+            sort=False,#这里为了打印label.tsv不改变原始顺序
             repeat=False,
             shuffle=False)
-        
+        #                        #sort_key=lambda x: len(x.text),
         print ("Loaded {} training examples".format(len(train_data)))
         print ("Loaded {} test examples".format(len(test_data)))
         print ("Loaded {} validation examples".format(len(val_data)))
 
 
 def evaluate_model(model, iterator):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    criterion = torch.nn.CrossEntropyLoss()  # 加了torch
+    criterion = criterion.to(device)
+
     all_preds = []
     all_y = []
+    epoch_loss = 0
     for idx,batch in enumerate(iterator):
         if torch.cuda.is_available():
             x = batch.text.cuda()
@@ -146,12 +152,43 @@ def evaluate_model(model, iterator):
             x = batch.text
             pos = batch.pos
         y_pred = model(x,pos)
+
+        loss = criterion(y_pred.view(-1, 5), (batch.label - 1).to(device).view(-1))  # 5是标签种类数
+
         predicted = torch.max(y_pred.cpu().data, 1)[1] + 1
         all_preds.extend(predicted.numpy())
         all_y.extend(batch.label.numpy())
-    score = accuracy_score(all_y, np.array(all_preds).flatten())
-    macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
-    return score,macro_f1
 
-def evaluate_model_te(model, iterator):#有时间得到logits,
-    pass
+        epoch_loss += loss.mean().item()
+
+    #print('预测样本数：'+str(len(all_y)))
+    accscore = accuracy_score(all_y, np.array(all_preds).flatten())
+    macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
+    return epoch_loss / len(iterator),accscore,macro_f1
+
+def evaluate_model_te(model, iterator):#有时间得到tensoboard图
+
+    all_preds = []
+    all_y = []
+    all_logits=[]
+    for idx,batch in enumerate(iterator):
+        if torch.cuda.is_available():
+            x = batch.text.cuda()
+            pos = batch.pos.cuda()
+        else:
+            x = batch.text
+            pos = batch.pos
+        y_pred = model(x,pos)
+        predicted = torch.max(y_pred.cpu().data, 1)[1] + 1#[0]是最大值，[1]是最大值的索引
+        all_preds.extend(predicted.numpy())
+        all_y.extend(batch.label.numpy())
+        norm=nn.Softmax(dim=1)#按最后一个维度
+        all_logits=np.append(all_logits,norm(y_pred.cpu().data))#每种分类的可能性数组
+    np.savetxt('../data/sem/all_logits_bilstm.txt', all_logits.reshape(-1, 5))
+
+    accuracy = accuracy_score(all_y, np.array(all_preds).flatten())
+    #micro_f1 = f1_score(all_y, np.array(all_preds).flatten(), average='micro')
+    #weighted_f1=f1_score(all_y, np.array(all_preds).flatten(), average='weighted')
+    macro_f1 = f1_score(all_y, np.array(all_preds).flatten(), average='macro')
+    return accuracy, macro_f1, np.array(all_preds).flatten(), all_y
+

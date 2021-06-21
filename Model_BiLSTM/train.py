@@ -54,18 +54,41 @@ if __name__=='__main__':
     
     train_losses = []
     val_accuracies = []
-    
-    for i in range(config.max_epochs):
-        print ("Epoch: {}".format(i))
-        train_loss,val_accuracy = model.run_epoch(dataset.train_iterator, dataset.val_iterator, i)
+
+    num_model =0
+    num_bestacc = 0
+    for ep in range(config.max_epochs):
+        print ("Epoch: {}".format(ep))
+        train_loss,val_accuracy= model.run_epoch(dataset.train_iterator, dataset.val_iterator, ep)
         train_losses.append(train_loss)
         val_accuracies.append(val_accuracy)
 
-    train_acc,_ = evaluate_model(model, dataset.train_iterator)
-    val_acc,_ = evaluate_model(model, dataset.val_iterator)
-    test_acc,macro_f1 = evaluate_model(model, dataset.test_iterator)
+    # print('train_evaluate_model---')4974
+    _,train_acc, _ = evaluate_model(model, dataset.train_iterator)
+    # print('val_evaluate_model---')1658
+    _,val_acc, _ = evaluate_model(model, dataset.val_iterator)
+    # print('test_evaluate_model---')1658
+    test_acc, macro_f1, all_preds, all_labels = evaluate_model_te(model,dataset.test_iterator)
 
-    print ('Final Training Accuracy: {:.4f}'.format(train_acc))
-    print ('Final Validation Accuracy: {:.4f}'.format(val_acc))
-    print ('Final Test Accuracy: {:.4f}'.format(test_acc))
+   # 获取测试集的文本
+    text_li = []
+    with open(test_file, 'r', encoding='utf-8') as fi:
+        next(fi)
+        rowes = csv.reader(fi, delimiter='\t')
+        for row in rowes:
+            text = row[0]
+            text_li.append(text)
+
+    # dataframe保存带标签的预测文件ntest_label.tsv,格式：id,text,label,predict_label
+    df = pd.DataFrame(columns=['text', 'label', 'predict_label'])
+    df['text'] = text_li
+    df['predict_label'] = all_preds
+    df['label'] = all_labels
+    df.to_csv('../data/sem/ntest_bilstm_label.tsv', sep='\t')
+
+    print('Final Training Accuracy: {:.4f}'.format(train_acc))
+    print('Final Validation Accuracy: {:.4f}'.format(val_acc))
+    print('Final Test Accuracy: {:.4f}'.format(test_acc))
     print('Final Test macro-f1: {:.4f}'.format(macro_f1))
+    # print('Final Test micro-f1: {:.4f}'.format(micro_f1))
+    # print('Final Test wei-f1: {:.4f}'.format(weighted_f1))

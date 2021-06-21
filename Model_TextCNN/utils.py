@@ -113,23 +113,38 @@ class Dataset(object):
 
 
 def evaluate_model(model, iterator):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    criterion = torch.nn.CrossEntropyLoss()  # 加了torch
+    criterion = criterion.to(device)
+
     all_preds = []
     all_y = []
+    epoch_loss = 0
     for idx,batch in enumerate(iterator):
         if torch.cuda.is_available():
             x = batch.text.cuda()
         else:
             x = batch.text
         y_pred = model(x)
+
+        #print(y_pred.view(-1, 5))
+        #print(batch.label.to(device).view(-1))
+        loss = criterion(y_pred.view(-1, 5), (batch.label-1).to(device).view(-1))#5是标签种类数
+        #print(loss)
+
         predicted = torch.max(y_pred.cpu().data, 1)[1] + 1
+
         all_preds.extend(predicted.numpy())
         all_y.extend(batch.label.numpy())
-    #print('预测样本数：'+str(len(all_y)))
-    score = accuracy_score(all_y, np.array(all_preds).flatten())
-    macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
-    return score,macro_f1
 
-def evaluate_model_te(model, iterator):#有时间得到logits(roc曲线), tensoboard图
+        epoch_loss += loss.mean().item()
+
+    #print('预测样本数：'+str(len(all_y)))
+    accscore = accuracy_score(all_y, np.array(all_preds).flatten())
+    macro_f1=f1_score(all_y, np.array(all_preds).flatten(), average='macro')
+    return epoch_loss / len(iterator),accscore,macro_f1
+
+def evaluate_model_te(model, iterator):#有时间得到tensoboard图
 
     all_preds = []
     all_y = []
@@ -143,13 +158,13 @@ def evaluate_model_te(model, iterator):#有时间得到logits(roc曲线), tensob
         predicted = torch.max(y_pred.cpu().data, 1)[1] + 1#[0]是最大值，[1]是最大值的索引
         all_preds.extend(predicted.numpy())
         all_y.extend(batch.label.numpy())
-        norm=nn.Softmax(dim=1)
-        all_logits=np.append(all_logits,norm(y_pred.cpu().data))#每种分类的可能性数组[yp.cpu()] y_pred.cpu().data
+        norm=nn.Softmax(dim=1)#按最后一个维度
+        all_logits=np.append(all_logits,norm(y_pred.cpu().data))#每种分类的可能性数组
     np.savetxt('../data/sem/all_logits_cnn.txt', all_logits.reshape(-1, 5))
 
     accuracy = accuracy_score(all_y, np.array(all_preds).flatten())
-    micro_f1 = f1_score(all_y, np.array(all_preds).flatten(), average='micro')
-    weighted_f1=f1_score(all_y, np.array(all_preds).flatten(), average='weighted')
+    #micro_f1 = f1_score(all_y, np.array(all_preds).flatten(), average='micro')
+    #weighted_f1=f1_score(all_y, np.array(all_preds).flatten(), average='weighted')
     macro_f1 = f1_score(all_y, np.array(all_preds).flatten(), average='macro')
-    return accuracy, macro_f1, np.array(all_preds).flatten(), all_y,micro_f1,weighted_f1
+    return accuracy, macro_f1, np.array(all_preds).flatten(), all_y
 

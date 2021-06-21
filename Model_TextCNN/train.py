@@ -41,7 +41,7 @@ if __name__=='__main__':
     model = TextCNN(config, len(dataset.vocab), dataset.word_embeddings)
     if torch.cuda.is_available():
         model.cuda()
-    model.train()
+    model.train()###???
     optimizer = optim.Adam(model.parameters(), lr=config.lr)#SGD
     #NLLLoss = nn.NLLLoss()
     CELoss = nn.CrossEntropyLoss()
@@ -52,22 +52,23 @@ if __name__=='__main__':
     
     train_losses = []
     val_accuracies = []
-    
-    for i in range(config.max_epochs):
-        print ("Epoch: {}".format(i))
-        train_loss,val_accuracy = model.run_epoch(dataset.train_iterator, dataset.val_iterator, i)
+
+    num_model =0
+    num_bestacc = 0
+    for ep in range(config.max_epochs):
+        print ("Epoch: {}".format(ep))
+        train_loss,val_accuracy= model.run_epoch(dataset.train_iterator, dataset.val_iterator, ep)
         train_losses.append(train_loss)
         val_accuracies.append(val_accuracy)
 
-    #print('train_evaluate_model---')4974
-    train_acc,_ = evaluate_model(model, dataset.train_iterator)
-    #print('val_evaluate_model---')1658
-    val_acc,_ = evaluate_model(model, dataset.val_iterator)
-    #print('test_evaluate_model---')1658
-    test_acc, macro_f1, all_preds, all_labels, micro_f1,weighted_f1 = evaluate_model_te(model, dataset.test_iterator)
+    # print('train_evaluate_model---')4974
+    _,train_acc, _ = evaluate_model(model, dataset.train_iterator)
+    # print('val_evaluate_model---')1658
+    _,val_acc, _ = evaluate_model(model, dataset.val_iterator)
+    # print('test_evaluate_model---')1658
+    test_acc, macro_f1, all_preds, all_labels = evaluate_model_te(model,dataset.test_iterator)
 
-
-    #获取测试集的文本
+   # 获取测试集的文本
     text_li = []
     with open(test_file, 'r', encoding='utf-8') as fi:
         next(fi)
@@ -83,9 +84,9 @@ if __name__=='__main__':
     df['label'] = all_labels
     df.to_csv('../data/sem/ntest_cnn_label.tsv', sep='\t')
 
-    print ('Final Training Accuracy: {:.4f}'.format(train_acc))
-    print ('Final Validation Accuracy: {:.4f}'.format(val_acc))
-    print ('Final Test Accuracy: {:.4f}'.format(test_acc))
+    print('Final Training Accuracy: {:.4f}'.format(train_acc))
+    print('Final Validation Accuracy: {:.4f}'.format(val_acc))
+    print('Final Test Accuracy: {:.4f}'.format(test_acc))
     print('Final Test macro-f1: {:.4f}'.format(macro_f1))
-    print('Final Test micro-f1: {:.4f}'.format(micro_f1))
-    print('Final Test wei-f1: {:.4f}'.format(weighted_f1))
+    # print('Final Test micro-f1: {:.4f}'.format(micro_f1))
+    # print('Final Test wei-f1: {:.4f}'.format(weighted_f1))
