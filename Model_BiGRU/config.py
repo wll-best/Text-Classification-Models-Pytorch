@@ -7,7 +7,7 @@ class Config(object):
     hidden_size = 300
     bidirectional = True
     output_size = 5
-    max_epochs = 30
+    max_epochs = 3
     lr = 0.001
     batch_size = 64
     max_sen_len = 128 # Sequence length for BiGRU

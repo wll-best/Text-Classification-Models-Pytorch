@@ -58,7 +58,7 @@ class BiGRU(nn.Module):
         # Convert input to (64, hidden_size * hidden_layers * num_directions) for linear layer
         final_feature_map = torch.cat([final_feature_map[i,:,:] for i in range(final_feature_map.shape[0])], dim=1)
         final_out = self.fc(final_feature_map)
-        return self.softmax(final_out)
+        return final_out
     
     def add_optimizer(self, optimizer):
         self.optimizer = optimizer
@@ -104,7 +104,8 @@ class BiGRU(nn.Module):
                 losses = []
                 
                 # Evalute Accuracy on validation set
-                val_accuracy,_ = evaluate_model(self, val_iterator)
+                _,val_accuracy,_ = evaluate_model(self, val_iterator)
+                val_accuracies.append(val_accuracy)
                 print("\tVal Accuracy: {:.4f}".format(val_accuracy))
                 self.train()
                 
